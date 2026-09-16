@@ -1,4 +1,4 @@
-# Dailies-DAG — Zero-Latency Branching Edits for Video DiTs
+# Dailies-DAG - Zero-Latency Branching Edits for Video DiTs
 
 > Built for Virtual Production and continuous editing. Target reader: creative-tech
 > researchers evaluating whether diffusion-based relighting can hold cinematic
@@ -8,7 +8,7 @@
 
 A standard video DiT re-encodes the full spatio-temporal context on every edit.
 For a clip with T frames of H \times W latents, each self-attention layer
-costs O((T \times H \times W)^2) — and a single slider nudge on frame 60
+costs O((T \times H \times W)^2) and a single slider nudge on frame 60
 pays that price across all 40 Wan2.1-14B blocks before the artist sees a pixel.
 The GPUs are not computing anything new. They are recomputing everything old.
 That is hardware starvation, and it is what kills interactive dailies review.
