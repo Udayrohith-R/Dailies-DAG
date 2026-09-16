@@ -34,7 +34,7 @@ frame 60 ──────► CoW fork: new tail blocks, Triton steer vector, R
 `dailies_dag/cache/distributed_block_paged.py`
 
 Video tokens are 3D spatio-temporal patches, so physical blocks are
-`[B_t=4, S, H_l, D_h]` K/V tiles — the temporal analogue of vLLM's paged
+`[B_t=4, S, H_l, D_h]` K/V tiles  the temporal analogue of vLLM's paged
 tokens, frame-aligned so edits stay CoW-clean. The pools (`k_pool`/`v_pool`,
 `[L, N, B_t, S, H_l, D_h]`) are allocated **once**, contiguous, and never
 resized: the hot paths (`fork` / `write_block`) use only slicing + `copy_`,
@@ -42,13 +42,13 @@ never `cat`/`stack`/`empty`. Ownership is an explicit per-block
 `ref_counts: torch.Tensor`.
 
 - `fork(parent) -> child`: clones the logical table (`List[int]`), bumps
-refcounts. **Zero memcpy** — enforced by test (fails on any `copy_`).
+refcounts. **Zero memcpy** enforced by test (fails on any `copy_`).
 - `write_block(branch, frame, k, v)`: `refcount == 1` → in-place slice;
 `refcount > 1` → pop one free block, copy one block, repoint one entry.
 - **Distributed**: heads sharded across sequence-parallel ranks
 (DeepSpeed-Ulysses / Ring-Attention compatible; rank `r` owns
 `[r·H_l, (r+1)·H_l)`), rank/world auto-detected from `torch.distributed`.
-Shard-local pools keep the design FSDP-friendly — no replicated cache state
+Shard-local pools keep the design FSDP-friendly no replicated cache state
 beyond the owned head slice. Defaults match Wan2.1-14B geometry
 (40 heads × 128 dim, 40 layers); tests run shrunken shapes.
 - `CausalPagedAttentionWrapper` (`dailies_dag/models/wan_temporal_interceptor.py`)
@@ -65,12 +65,12 @@ fp32 with max-subtraction for bf16/fp8 stability.
 
 Text prompts are a lottery for lighting continuity. Dailies-DAG steers
 mechanistically: a learned 1-D direction `V` (e.g. *luminance*) is added
-in place — `X += α·V` over `[B, T·S, D]` — through the custom
+in place — `X += α·V` over `[B, T·S, D]` through the custom
 `_fused_steer_kernel` (2-D grid over `(row, hidden-tile)`, `BLOCK` of
 1024/2048, `num_warps=8` for Hopper/Ada bandwidth saturation, `α` as a
 runtime scalar so strength sweeps never recompile; exact `torch.no_grad`
 fallback on CPU). `install_steering_pre_hook(pipeline, V, α)` plants the edit
-as a forward pre-hook on every block's attention input — **before `to_qkv`** —
+as a forward pre-hook on every block's attention input **before `to_qkv`** 
 with live `set_alpha()` and optional temporal scoping (`frame_range`) so only
 the dirty branch slice is relit. Deterministic, slider-quantized, reproducible
 frame-to-frame: the same `α` is the same photons.
@@ -87,7 +87,7 @@ branch is scored by two frozen geometric judges (never any grad graph):
 when weights are offline. `grpo_step` computes group-relative advantages
 `A_i = (R_i − mean(R)) / (std(R) + ε)` over `G` branches for
 `R = w_edit·R_feat − λ_depth·L_depth − λ_flow·L_flow`, with vectorized
-Pareto filtering (`np.all`/`np.any` broadcasting) plus a hard gate —
+Pareto filtering (`np.all`/`np.any` broadcasting) plus a hard gate
 **any trajectory with depth drift past `τ` is discarded regardless of its
 feature score**. Penalties are normalized by the flow-matching timestep:
 early denoising steps (structure formation) penalize deviation up to `1+boost`
